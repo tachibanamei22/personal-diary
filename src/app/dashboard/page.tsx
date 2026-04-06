@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { getEntries, getEntryDates } from "@/lib/actions/entries";
 import EntryCard from "@/components/diary/EntryCard";
 import DiaryCalendar from "@/components/diary/DiaryCalendar";
@@ -40,12 +40,10 @@ export default async function DashboardPage({ searchParams }: Props) {
               : "No entries yet — write your first one!"}
           </p>
         </div>
-        <Button asChild className="rounded-xl gap-2 shrink-0">
-          <Link href="/dashboard/entries/new">
-            <PenLine className="h-4 w-4" />
-            New Entry
-          </Link>
-        </Button>
+        <Link href="/dashboard/entries/new" className={buttonVariants({ className: "rounded-xl gap-2 shrink-0" })}>
+          <PenLine className="h-4 w-4" />
+          New Entry
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8">
