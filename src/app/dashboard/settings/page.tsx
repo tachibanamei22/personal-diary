@@ -12,6 +12,9 @@ export default async function SettingsPage() {
 
   const profile = await getProfile();
 
+  // Derive fallback username from email prefix for accounts pre-dating the trigger
+  const fallbackUsername = user.email?.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "_") ?? "";
+
   return (
     <div className="max-w-xl mx-auto px-4 md:px-8 py-8 space-y-8">
       <div>
@@ -20,7 +23,7 @@ export default async function SettingsPage() {
       </div>
       <SettingsForm
         initialDisplayName={profile?.display_name ?? ""}
-        initialUsername={profile?.username ?? ""}
+        initialUsername={profile?.username ?? fallbackUsername}
         email={user.email ?? ""}
       />
     </div>
