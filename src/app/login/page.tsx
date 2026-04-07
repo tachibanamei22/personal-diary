@@ -12,14 +12,31 @@ import { BookOpen, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // email or username
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+
     const supabase = createClient();
+    let email = identifier.trim();
+
+    // If no "@" — treat as username, resolve to email via secure RPC
+    if (!email.includes("@")) {
+      const { data, error } = await supabase.rpc("get_email_by_username", {
+        p_username: email.toLowerCase(),
+      });
+
+      if (error || !data) {
+        toast.error("No account found with that username");
+        setLoading(false);
+        return;
+      }
+      email = data as string;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(error.message);
@@ -33,7 +50,6 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-2">
           <div className="rounded-full bg-primary/10 p-3">
             <BookOpen className="h-7 w-7 text-primary" />
@@ -46,15 +62,15 @@ export default function LoginPage() {
           <h2 className="font-heading text-xl font-semibold mb-6">Welcome back</h2>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="identifier">Email or username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                type="text"
+                placeholder="you@example.com or john_doe"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="username"
               />
             </div>
             <div className="space-y-1.5">

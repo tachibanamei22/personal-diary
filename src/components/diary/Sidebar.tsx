@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { BookOpen, LayoutDashboard, PenLine, LogOut } from "lucide-react";
+import { BookOpen, LayoutDashboard, PenLine, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/entries/new", label: "New Entry", icon: PenLine, exact: false },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: false },
 ];
 
 export default function Sidebar() {

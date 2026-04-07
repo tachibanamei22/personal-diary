@@ -6,7 +6,7 @@ import EntryCard from "@/components/diary/EntryCard";
 import DiaryCalendar from "@/components/diary/DiaryCalendar";
 import SearchBar from "@/components/diary/SearchBar";
 import { PenLine, BookOpen } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/actions/profile";
 import type { DiaryEntry } from "@/types";
 
 interface Props {
@@ -15,14 +15,13 @@ interface Props {
 
 export default async function DashboardPage({ searchParams }: Props) {
   const { q } = await searchParams;
-  const [entries, entryDates, supabase] = await Promise.all([
+  const [entries, entryDates, profile] = await Promise.all([
     getEntries(q),
     getEntryDates(),
-    createClient(),
+    getProfile(),
   ]);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const firstName = user?.email?.split("@")[0] ?? "there";
+  const firstName = profile?.display_name || profile?.username || "there";
 
   const streak = calcStreak(entryDates);
 
