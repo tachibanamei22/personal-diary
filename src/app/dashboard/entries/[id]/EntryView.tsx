@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MOODS, type DiaryEntry, type EntryImage } from "@/types";
-import EntryForm from "@/components/diary/EntryForm";
+import { MOODS, type DiaryEntry, type EntryImage, type Mood } from "@/types";
+import EntryForm, { type EntryFormHandle } from "@/components/diary/EntryForm";
 import ImageCanvas from "@/components/diary/ImageCanvas";
-import { ArrowLeft, Pencil, Check } from "lucide-react";
+import { ArrowLeft, Pencil, Check, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface EntryViewProps {
   entry: DiaryEntry;
@@ -21,18 +22,36 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
   const router = useRouter();
   const [editing, setEditing] = useState(startInEditMode);
   const [images, setImages] = useState<EntryImage[]>(initialImages);
-  const mood = MOODS.find((m) => m.value === entry.mood);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  function handleDone() {
-    setEditing(false);
-    // Clean up ?new=true from the URL without adding to history stack
-    router.replace(`/dashboard/entries/${entry.id}`);
-    router.refresh();
+  // Lifted state — keeps live preview in sync while typing in the editor below
+  const [liveTitle, setLiveTitle] = useState(entry.title);
+  const [liveMood, setLiveMood] = useState<Mood | null>((entry.mood as Mood) ?? null);
+
+  // Ref to the embedded form so "Done editing" can trigger save
+  const formRef = useRef<EntryFormHandle>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleDone() {
+    if (!formRef.current) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      await formRef.current.save();
+      toast.success("Entry saved");
+      setEditing(false);
+      router.replace(`/dashboard/entries/${entry.id}`);
+      router.refresh();
+    } catch {
+      // error already toasted inside save()
+    } finally {
+      setSaving(false);
+    }
   }
 
+  const displayMood = editing ? MOODS.find((m) => m.value === liveMood) : MOODS.find((m) => m.value === entry.mood);
+  const displayTitle = editing ? liveTitle : entry.title;
+
   return (
-    // Outer wrapper: full-width so the image canvas can extend into margins
     <div className="relative w-full px-4 md:px-8 py-8 animate-page-enter">
 
       {/* ── Nav bar ──────────────────────────────────────── */}
@@ -42,9 +61,17 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
           Back
         </Link>
         {editing ? (
-          <Button variant="outline" size="sm" onClick={handleDone} className="gap-1.5 rounded-xl">
-            <Check className="h-3.5 w-3.5" />
-            Done editing
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDone}
+            disabled={saving}
+            className="gap-1.5 rounded-xl min-w-32"
+          >
+            {saving
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <Check className="h-3.5 w-3.5" />}
+            {saving ? "Saving…" : "Done editing"}
           </Button>
         ) : (
           <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="gap-1.5 rounded-xl">
@@ -54,24 +81,27 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
         )}
       </div>
 
-      {/* ── Live preview area (same in both modes) ───────── */}
-      {/* This full-width relative div IS the canvas for polaroids */}
+      {/* ── Live preview area ────────────────────────────── */}
       <div ref={canvasRef} className="relative w-full" style={{ minHeight: images.length > 0 || editing ? "480px" : undefined }}>
 
-        {/* Text content — centered column, z-index 0 */}
+        {/* Text content */}
         <div className="relative max-w-3xl mx-auto space-y-4" style={{ zIndex: 0 }}>
-          {/* Meta */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {mood && <span className="text-xl">{mood.emoji}</span>}
+              {displayMood && <span className="text-xl">{displayMood.emoji}</span>}
               <span>{format(new Date(entry.created_at), "EEEE, MMMM d, yyyy")}</span>
-              {entry.updated_at !== entry.created_at && (
+              {!startInEditMode && entry.updated_at !== entry.created_at && (
                 <span className="text-xs">· edited {format(new Date(entry.updated_at), "MMM d")}</span>
               )}
             </div>
+
+            {/* Title — live while editing */}
             <h1 className="font-heading text-3xl font-bold text-foreground">
-              {entry.title || "Untitled entry"}
+              {displayTitle || (
+                <span className="text-muted-foreground/50 font-normal italic text-2xl">No title yet…</span>
+              )}
             </h1>
+
             {entry.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {entry.tags.map((tag) => (
@@ -83,15 +113,17 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
             )}
           </div>
 
-          {/* Rendered text */}
-          <div
-            className="tiptap-editor text-foreground leading-relaxed"
-            style={{ paddingBottom: "3rem" }}
-            dangerouslySetInnerHTML={{ __html: entry.content }}
-          />
+          {/* Rendered text (view mode only — editor is below in edit mode) */}
+          {!editing && (
+            <div
+              className="tiptap-editor text-foreground leading-relaxed"
+              style={{ paddingBottom: images.length > 0 ? "3rem" : undefined }}
+              dangerouslySetInnerHTML={{ __html: entry.content }}
+            />
+          )}
         </div>
 
-        {/* Polaroid canvas — covers full width, images float freely */}
+        {/* Polaroid canvas */}
         <ImageCanvas
           entryId={entry.id}
           images={images}
@@ -101,13 +133,16 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
         />
       </div>
 
-      {/* ── Text editor — only in edit mode, below the preview ── */}
+      {/* ── Editor — only in edit mode ───────────────────── */}
       {editing && (
-        <div className="max-w-3xl mx-auto mt-8 pt-6 border-t border-border space-y-1">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-4">
-            Edit text, mood &amp; tags
-          </p>
-          <EntryForm entry={entry} onDone={handleDone} />
+        <div className="max-w-3xl mx-auto mt-6 pt-6 border-t border-border">
+          <EntryForm
+            ref={formRef}
+            entry={entry}
+            onDone={handleDone}
+            onTitleChange={setLiveTitle}
+            onMoodChange={setLiveMood}
+          />
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useImperativeHandle, forwardRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { Loader2, Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-// Lazy-load editor to avoid SSR issues
 const RichTextEditor = dynamic(() => import("@/components/editor/RichTextEditor"), {
   ssr: false,
   loading: () => (
@@ -21,12 +20,24 @@ const RichTextEditor = dynamic(() => import("@/components/editor/RichTextEditor"
   ),
 });
 
+export interface EntryFormHandle {
+  save: () => Promise<void>;
+  isPending: boolean;
+}
+
 interface EntryFormProps {
   entry?: DiaryEntry;
   onDone?: () => void;
+  /** Called whenever the title changes — lets parent update the live preview */
+  onTitleChange?: (title: string) => void;
+  /** Called whenever mood changes — lets parent update the live preview */
+  onMoodChange?: (mood: Mood | null) => void;
 }
 
-export default function EntryForm({ entry, onDone }: EntryFormProps) {
+const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm(
+  { entry, onDone, onTitleChange, onMoodChange },
+  ref
+) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -35,34 +46,45 @@ export default function EntryForm({ entry, onDone }: EntryFormProps) {
   const [mood, setMood] = useState<Mood | null>((entry?.mood as Mood) ?? null);
   const [tags, setTags] = useState<string[]>(entry?.tags ?? []);
 
-  function handleSave() {
-    startTransition(async () => {
-      try {
-        if (entry) {
-          await updateEntry(entry.id, { title, content, mood, tags });
-          toast.success("Entry updated");
-          onDone?.();
-        } else {
-          const newEntry = await createEntry({ title, content, mood, tags });
-          toast.success("Entry saved");
-          router.push(`/dashboard/entries/${newEntry.id}`);
-          return;
+  function handleTitleChange(val: string) {
+    setTitle(val);
+    onTitleChange?.(val);
+  }
+
+  function handleMoodChange(val: Mood | null) {
+    setMood(val);
+    onMoodChange?.(val);
+  }
+
+  async function save() {
+    return new Promise<void>((resolve, reject) => {
+      startTransition(async () => {
+        try {
+          if (entry) {
+            await updateEntry(entry.id, { title, content, mood, tags });
+          } else {
+            const newEntry = await createEntry({ title, content, mood, tags });
+            router.push(`/dashboard/entries/${newEntry.id}`);
+          }
+          resolve();
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Something went wrong";
+          toast.error(msg);
+          reject(err);
         }
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Something went wrong");
-      }
+      });
     });
   }
 
+  // Expose save() and isPending to parent (EntryView's "Done editing" button)
+  useImperativeHandle(ref, () => ({ save, isPending }), [isPending]);
+
   return (
-    <div className={onDone ? "space-y-6" : "max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-6"}>
-      {/* Header — only shown when used as standalone page (not embedded) */}
+    <div className={onDone ? "space-y-5" : "max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-6"}>
+      {/* Header — standalone page only */}
       {!onDone && (
         <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="font-heading text-2xl font-bold">
@@ -74,13 +96,13 @@ export default function EntryForm({ entry, onDone }: EntryFormProps) {
       {/* Title */}
       <Input
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => handleTitleChange(e.target.value)}
         placeholder="Give this entry a title…"
         className="text-lg font-heading font-semibold h-12 rounded-xl border-border"
       />
 
       {/* Mood */}
-      <MoodPicker value={mood} onChange={setMood} />
+      <MoodPicker value={mood} onChange={handleMoodChange} />
 
       {/* Editor */}
       <RichTextEditor
@@ -95,13 +117,17 @@ export default function EntryForm({ entry, onDone }: EntryFormProps) {
         <TagInput tags={tags} onChange={setTags} />
       </div>
 
-      {/* Save */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isPending} className="rounded-xl gap-2 px-6">
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {entry ? "Update entry" : "Save entry"}
-        </Button>
-      </div>
+      {/* Save button — only shown in standalone mode (not embedded in EntryView) */}
+      {!onDone && (
+        <div className="flex justify-end">
+          <Button onClick={() => save().then(() => toast.success("Entry saved"))} disabled={isPending} className="rounded-xl gap-2 px-6">
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {entry ? "Update entry" : "Save entry"}
+          </Button>
+        </div>
+      )}
     </div>
   );
-}
+});
+
+export default EntryForm;
