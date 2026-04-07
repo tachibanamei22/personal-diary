@@ -10,13 +10,24 @@ import type { EntryImage } from "@/types";
 
 interface ImageCanvasProps {
   entryId: string;
-  images: EntryImage[];           // controlled from parent
+  images: EntryImage[];
   onImagesChange: (imgs: EntryImage[]) => void;
   editable: boolean;
+  /** The full-width container that images are positioned relative to.
+   *  If omitted, falls back to an internal absolute overlay div. */
+  canvasRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export default function ImageCanvas({ entryId, images, onImagesChange, editable }: ImageCanvasProps) {
-  const canvasRef = useRef<HTMLDivElement>(null);
+export default function ImageCanvas({
+  entryId,
+  images,
+  onImagesChange,
+  editable,
+  canvasRef: externalCanvasRef,
+}: ImageCanvasProps) {
+  const internalCanvasRef = useRef<HTMLDivElement>(null);
+  const canvasRef = externalCanvasRef ?? internalCanvasRef;
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -70,9 +81,10 @@ export default function ImageCanvas({ entryId, images, onImagesChange, editable 
         .from("diary-images")
         .getPublicUrl(storagePath);
 
-      const x = 4 + Math.random() * 18;
-      const y = 4 + Math.random() * 15;
-      const rotation = (Math.random() * 12) - 6;
+      // Scatter into the wider canvas — x can now go up to ~75% for full-width
+      const x = 5 + Math.random() * 55;
+      const y = 5 + Math.random() * 30;
+      const rotation = (Math.random() * 14) - 7;
 
       const newImage = await createImageRecord({ entryId, url: publicUrl, storagePath, x, y, rotation });
       const img = newImage as EntryImage;
@@ -93,31 +105,36 @@ export default function ImageCanvas({ entryId, images, onImagesChange, editable 
 
   return (
     <>
-      <div
-        ref={canvasRef}
-        className="absolute inset-0"
-        style={{ pointerEvents: "none", minHeight: "100%" }}
-      >
-        {images.map((img) => (
-          <DraggableImage
-            key={img.id}
-            image={img}
-            editable={editable}
-            containerRef={canvasRef}
-            onDelete={handleDelete}
-            onTransformChange={handleTransformChange}
-            zIndex={zMap[img.id] ?? 1}
-            onBringToFront={bringToFront}
-          />
-        ))}
-      </div>
+      {/* If no external canvas ref, wrap in our own absolute overlay */}
+      {!externalCanvasRef && (
+        <div
+          ref={internalCanvasRef}
+          className="absolute inset-0 pointer-events-none"
+          style={{ minHeight: "100%" }}
+        />
+      )}
 
+      {/* Polaroids — positioned relative to canvasRef */}
+      {images.map((img) => (
+        <DraggableImage
+          key={img.id}
+          image={img}
+          editable={editable}
+          containerRef={canvasRef}
+          onDelete={handleDelete}
+          onTransformChange={handleTransformChange}
+          zIndex={zMap[img.id] ?? 1}
+          onBringToFront={bringToFront}
+        />
+      ))}
+
+      {/* Upload button */}
       {editable && (
-        <div className="relative z-10">
+        <div className="relative" style={{ zIndex: 10 }}>
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-border bg-card/60 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-card transition-colors"
+            className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-border bg-card/80 backdrop-blur-sm text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-card transition-colors"
             title="Add a photo or GIF to this page"
           >
             {uploading

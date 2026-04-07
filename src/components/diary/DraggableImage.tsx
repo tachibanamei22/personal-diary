@@ -72,8 +72,9 @@ export default function DraggableImage({
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    const newX = Math.max(0, Math.min(85, drag.current.startX + ((e.clientX - drag.current.startMouseX) / rect.width) * 100));
-    const newY = Math.max(0, Math.min(88, drag.current.startY + ((e.clientY - drag.current.startMouseY) / rect.height) * 100));
+    // Allow images to reach the far edges of the full-width canvas
+    const newX = Math.max(-5, Math.min(88, drag.current.startX + ((e.clientX - drag.current.startMouseX) / rect.width) * 100));
+    const newY = Math.max(-2, Math.min(95, drag.current.startY + ((e.clientY - drag.current.startMouseY) / rect.height) * 100));
     posRef.current = { ...posRef.current, x: newX, y: newY };
     setRenderPos({ ...posRef.current });
   }
