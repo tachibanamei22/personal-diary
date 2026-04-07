@@ -10,21 +10,20 @@ import type { EntryImage } from "@/types";
 
 interface ImageCanvasProps {
   entryId: string;
-  initialImages: EntryImage[];
+  images: EntryImage[];           // controlled from parent
+  onImagesChange: (imgs: EntryImage[]) => void;
   editable: boolean;
 }
 
-export default function ImageCanvas({ entryId, initialImages, editable }: ImageCanvasProps) {
+export default function ImageCanvas({ entryId, images, onImagesChange, editable }: ImageCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [images, setImages] = useState<EntryImage[]>(initialImages);
   const [uploading, setUploading] = useState(false);
 
-  // Track z-index per image — clicking an image brings it to front
   const [zMap, setZMap] = useState<Record<string, number>>(
-    () => Object.fromEntries(initialImages.map((img, i) => [img.id, i + 1]))
+    () => Object.fromEntries(images.map((img, i) => [img.id, i + 1]))
   );
-  const maxZRef = useRef(initialImages.length + 1);
+  const maxZRef = useRef(images.length + 1);
 
   function bringToFront(id: string) {
     maxZRef.current += 1;
@@ -32,7 +31,7 @@ export default function ImageCanvas({ entryId, initialImages, editable }: ImageC
   }
 
   function handleDelete(id: string) {
-    setImages((prev) => prev.filter((img) => img.id !== id));
+    onImagesChange(images.filter((img) => img.id !== id));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -67,17 +66,16 @@ export default function ImageCanvas({ entryId, initialImages, editable }: ImageC
         .from("diary-images")
         .getPublicUrl(storagePath);
 
-      // Scatter images naturally — random position + slight random tilt
       const x = 4 + Math.random() * 18;
       const y = 4 + Math.random() * 15;
-      const rotation = (Math.random() * 12) - 6; // -6° to +6°
+      const rotation = (Math.random() * 12) - 6;
 
       const newImage = await createImageRecord({ entryId, url: publicUrl, storagePath, x, y, rotation });
-
       const img = newImage as EntryImage;
-      setImages((prev) => [...prev, img]);
+
       maxZRef.current += 1;
       setZMap((prev) => ({ ...prev, [img.id]: maxZRef.current }));
+      onImagesChange([...images, img]);
       toast.success("Photo added!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -87,12 +85,10 @@ export default function ImageCanvas({ entryId, initialImages, editable }: ImageC
     }
   }
 
-  // Nothing to render in view mode with no images
   if (images.length === 0 && !editable) return null;
 
   return (
     <>
-      {/* Canvas overlay — pointer-events: none so text stays selectable in view mode */}
       <div
         ref={canvasRef}
         className="absolute inset-0"
@@ -111,7 +107,6 @@ export default function ImageCanvas({ entryId, initialImages, editable }: ImageC
         ))}
       </div>
 
-      {/* Upload button — outside the pointer-events:none canvas */}
       {editable && (
         <div className="relative z-10">
           <button

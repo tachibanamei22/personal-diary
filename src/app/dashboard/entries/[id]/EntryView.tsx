@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,20 @@ interface EntryViewProps {
   images: EntryImage[];
 }
 
-export default function EntryView({ entry, images }: EntryViewProps) {
+export default function EntryView({ entry, images: initialImages }: EntryViewProps) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
+  // Lifted state — shared between edit and view modes so changes are instant
+  const [images, setImages] = useState<EntryImage[]>(initialImages);
   const mood = MOODS.find((m) => m.value === entry.mood);
 
+  function handleDone() {
+    setEditing(false);
+    // Refresh server component so updated text, mood, tags flow down
+    router.refresh();
+  }
+
   if (editing) {
-    // Pass images to EntryForm so the page shows the photo canvas while editing text
     return (
       <div className="max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-6">
         {/* Nav */}
@@ -29,7 +38,7 @@ export default function EntryView({ entry, images }: EntryViewProps) {
             <ArrowLeft className="h-4 w-4" />
             Back
           </Link>
-          <Button variant="outline" size="sm" onClick={() => setEditing(false)} className="gap-1.5 rounded-xl">
+          <Button variant="outline" size="sm" onClick={handleDone} className="gap-1.5 rounded-xl">
             <Check className="h-3.5 w-3.5" />
             Done editing
           </Button>
@@ -39,13 +48,14 @@ export default function EntryView({ entry, images }: EntryViewProps) {
         <div className="relative" style={{ minHeight: "520px" }}>
           <ImageCanvas
             entryId={entry.id}
-            initialImages={images}
+            images={images}
+            onImagesChange={setImages}
             editable={true}
           />
         </div>
 
         {/* Text editor */}
-        <EntryForm entry={entry} onDone={() => setEditing(false)} />
+        <EntryForm entry={entry} onDone={handleDone} />
       </div>
     );
   }
@@ -87,7 +97,7 @@ export default function EntryView({ entry, images }: EntryViewProps) {
         )}
       </div>
 
-      {/* Content + photos (view mode — photos overlap text like a real diary) */}
+      {/* Content + photos (view mode) */}
       <div className="relative" style={{ minHeight: images.length > 0 ? "520px" : undefined }}>
         <div
           className="tiptap-editor text-foreground leading-relaxed"
@@ -96,7 +106,8 @@ export default function EntryView({ entry, images }: EntryViewProps) {
         />
         <ImageCanvas
           entryId={entry.id}
-          initialImages={images}
+          images={images}
+          onImagesChange={setImages}
           editable={false}
         />
       </div>
