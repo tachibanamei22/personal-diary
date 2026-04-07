@@ -27,6 +27,7 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
   // Lifted state — keeps live preview in sync while typing in the editor below
   const [liveTitle, setLiveTitle] = useState(entry.title);
   const [liveMood, setLiveMood] = useState<Mood | null>((entry.mood as Mood) ?? null);
+  const [liveContent, setLiveContent] = useState(entry.content);
 
   // Ref to the embedded form so "Done editing" can trigger save
   const formRef = useRef<EntryFormHandle>(null);
@@ -113,14 +114,12 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
             )}
           </div>
 
-          {/* Rendered text (view mode only — editor is below in edit mode) */}
-          {!editing && (
-            <div
-              className="tiptap-editor text-foreground leading-relaxed"
-              style={{ paddingBottom: images.length > 0 ? "3rem" : undefined }}
-              dangerouslySetInnerHTML={{ __html: entry.content }}
-            />
-          )}
+          {/* Rendered text — live in edit mode, static in view mode */}
+          <div
+            className="tiptap-editor text-foreground leading-relaxed"
+            style={{ paddingBottom: images.length > 0 ? "3rem" : undefined }}
+            dangerouslySetInnerHTML={{ __html: editing ? liveContent : entry.content }}
+          />
         </div>
 
         {/* Polaroid canvas */}
@@ -142,6 +141,7 @@ export default function EntryView({ entry, images: initialImages, startInEditMod
             onDone={handleDone}
             onTitleChange={setLiveTitle}
             onMoodChange={setLiveMood}
+            onContentChange={setLiveContent}
           />
         </div>
       )}

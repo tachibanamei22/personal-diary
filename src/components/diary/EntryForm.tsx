@@ -32,10 +32,12 @@ interface EntryFormProps {
   onTitleChange?: (title: string) => void;
   /** Called whenever mood changes — lets parent update the live preview */
   onMoodChange?: (mood: Mood | null) => void;
+  /** Called whenever content changes — lets parent update the live preview */
+  onContentChange?: (content: string) => void;
 }
 
 const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm(
-  { entry, onDone, onTitleChange, onMoodChange },
+  { entry, onDone, onTitleChange, onMoodChange, onContentChange },
   ref
 ) {
   const router = useRouter();
@@ -115,7 +117,7 @@ const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm
       {/* Editor */}
       <RichTextEditor
         content={content}
-        onChange={setContent}
+        onChange={(val) => { setContent(val); onContentChange?.(val); }}
         placeholder="What's on your mind today?"
       />
 
