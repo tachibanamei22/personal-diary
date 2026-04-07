@@ -34,6 +34,10 @@ export default function ImageCanvas({ entryId, images, onImagesChange, editable 
     onImagesChange(images.filter((img) => img.id !== id));
   }
 
+  function handleTransformChange(id: string, x: number, y: number, rotation: number) {
+    onImagesChange(images.map((img) => img.id === id ? { ...img, x, y, rotation } : img));
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -101,6 +105,7 @@ export default function ImageCanvas({ entryId, images, onImagesChange, editable 
             editable={editable}
             containerRef={canvasRef}
             onDelete={handleDelete}
+            onTransformChange={handleTransformChange}
             zIndex={zMap[img.id] ?? 1}
             onBringToFront={bringToFront}
           />

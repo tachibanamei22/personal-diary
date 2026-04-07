@@ -11,6 +11,7 @@ interface DraggableImageProps {
   editable: boolean;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onDelete: (id: string) => void;
+  onTransformChange: (id: string, x: number, y: number, rotation: number) => void;
   zIndex: number;
   onBringToFront: (id: string) => void;
 }
@@ -20,6 +21,7 @@ export default function DraggableImage({
   editable,
   containerRef,
   onDelete,
+  onTransformChange,
   zIndex,
   onBringToFront,
 }: DraggableImageProps) {
@@ -39,12 +41,14 @@ export default function DraggableImage({
 
   const saveTransform = useCallback(async () => {
     const { x, y, rotation } = posRef.current;
+    // Update parent state immediately so switching to view mode is instant
+    onTransformChange(image.id, x, y, rotation);
     try {
       await updateImageTransform(image.id, x, y, rotation);
     } catch {
       toast.error("Failed to save position");
     }
-  }, [image.id]);
+  }, [image.id, onTransformChange]);
 
   // ── Drag handlers (on the polaroid frame) ──────────────
   function onFramePointerDown(e: React.PointerEvent<HTMLDivElement>) {
