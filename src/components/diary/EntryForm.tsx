@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useImperativeHandle, forwardRef } from "react";
+import { useState, useTransition, useImperativeHandle, useRef, useEffect, forwardRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,12 @@ const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm
   const [mood, setMood] = useState<Mood | null>((entry?.mood as Mood) ?? null);
   const [tags, setTags] = useState<string[]>(entry?.tags ?? []);
 
+  // Always-current ref so save() never reads stale closure values
+  const latestValues = useRef({ title, content, mood, tags });
+  useEffect(() => {
+    latestValues.current = { title, content, mood, tags };
+  }, [title, content, mood, tags]);
+
   function handleTitleChange(val: string) {
     setTitle(val);
     onTitleChange?.(val);
@@ -57,13 +63,15 @@ const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm
   }
 
   async function save() {
+    // Read from ref — always has the latest values regardless of closure age
+    const { title: t, content: c, mood: m, tags: tg } = latestValues.current;
     return new Promise<void>((resolve, reject) => {
       startTransition(async () => {
         try {
           if (entry) {
-            await updateEntry(entry.id, { title, content, mood, tags });
+            await updateEntry(entry.id, { title: t, content: c, mood: m, tags: tg });
           } else {
-            const newEntry = await createEntry({ title, content, mood, tags });
+            const newEntry = await createEntry({ title: t, content: c, mood: m, tags: tg });
             router.push(`/dashboard/entries/${newEntry.id}`);
           }
           resolve();
@@ -76,8 +84,8 @@ const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm
     });
   }
 
-  // Expose save() and isPending to parent (EntryView's "Done editing" button)
-  useImperativeHandle(ref, () => ({ save, isPending }), [isPending]);
+  // Stable ref — save() reads latestValues ref so deps don't matter here
+  useImperativeHandle(ref, () => ({ save, isPending }), [isPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={onDone ? "space-y-5" : "max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-6"}>
