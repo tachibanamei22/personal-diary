@@ -2,6 +2,9 @@
 
 A personal diary web app built with Next.js 15, Supabase, and Tiptap.
 
+## Preview
+https://personal-diary-pi.vercel.app/dashboard
+
 ## Features
 
 - **Rich text editor** - bold, italic, underline, headings, lists, blockquotes, alignment
