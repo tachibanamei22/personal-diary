@@ -26,7 +26,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   const streak = calcStreak(entryDates);
 
   return (
-    <div className="px-4 md:px-8 py-8">
+    <div className="px-4 md:px-8 py-8 animate-page-enter">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -70,8 +70,10 @@ export default async function DashboardPage({ searchParams }: Props) {
             </div>
           ) : (
             <div className="space-y-3">
-              {(entries as DiaryEntry[]).map((entry) => (
-                <EntryCard key={entry.id} entry={entry} />
+              {(entries as DiaryEntry[]).map((entry, i) => (
+                <div key={entry.id} className="animate-card-enter" style={{ animationDelay: `${i * 40}ms` }}>
+                  <EntryCard entry={entry} />
+                </div>
               ))}
             </div>
           )}

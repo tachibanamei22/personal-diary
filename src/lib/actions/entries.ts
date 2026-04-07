@@ -4,6 +4,21 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Mood } from "@/types";
 
+export async function createDraftEntry() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: entry, error } = await supabase
+    .from("entries")
+    .insert({ user_id: user.id, title: "", content: "", tags: [], mood: null })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return entry;
+}
+
 export async function createEntry(data: {
   title: string;
   content: string;

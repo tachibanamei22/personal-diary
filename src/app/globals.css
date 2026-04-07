@@ -112,6 +112,28 @@
   }
 }
 
+/* ── Page & element animations ──────────────────────── */
+
+/* Fade + lift in — used on every page wrapper */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.25s ease-out both;
+}
+
+/* Staggered card entrance */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-card-enter {
+  animation: card-enter 0.2s ease-out both;
+}
+
 /* ── Dark mode — warm candlelit journal palette ──────── */
 .dark {
   /* Deep warm brown background, like a leather-bound book */

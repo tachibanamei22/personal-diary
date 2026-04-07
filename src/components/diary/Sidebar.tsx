@@ -46,10 +46,10 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150",
                 active
-                  ? "bg-primary/10 text-primary"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-primary/10 text-primary shadow-[inset_2px_0_0_0] shadow-primary/60"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5 active:scale-[0.98]"
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />

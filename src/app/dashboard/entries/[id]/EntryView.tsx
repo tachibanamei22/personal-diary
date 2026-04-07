@@ -14,24 +14,26 @@ import Link from "next/link";
 interface EntryViewProps {
   entry: DiaryEntry;
   images: EntryImage[];
+  startInEditMode?: boolean;
 }
 
-export default function EntryView({ entry, images: initialImages }: EntryViewProps) {
+export default function EntryView({ entry, images: initialImages, startInEditMode = false }: EntryViewProps) {
   const router = useRouter();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startInEditMode);
   const [images, setImages] = useState<EntryImage[]>(initialImages);
   const mood = MOODS.find((m) => m.value === entry.mood);
-  // Canvas ref lives here so both view and edit mode share the same coordinate space
   const canvasRef = useRef<HTMLDivElement>(null);
 
   function handleDone() {
     setEditing(false);
+    // Clean up ?new=true from the URL without adding to history stack
+    router.replace(`/dashboard/entries/${entry.id}`);
     router.refresh();
   }
 
   return (
     // Outer wrapper: full-width so the image canvas can extend into margins
-    <div className="relative w-full px-4 md:px-8 py-8">
+    <div className="relative w-full px-4 md:px-8 py-8 animate-page-enter">
 
       {/* ── Nav bar ──────────────────────────────────────── */}
       <div className="max-w-3xl mx-auto flex items-center justify-between mb-6">

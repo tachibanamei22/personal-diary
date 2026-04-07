@@ -19,10 +19,10 @@ export default function MoodPicker({ value, onChange }: MoodPickerProps) {
           title={mood.label}
           onClick={() => onChange(value === mood.value ? null : mood.value)}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all",
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all duration-150",
             value === mood.value
-              ? "bg-primary/10 border-primary/40 text-primary font-medium"
-              : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+              ? "bg-primary/10 border-primary/40 text-primary font-medium scale-105"
+              : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground hover:scale-105 active:scale-95"
           )}
         >
           <span>{mood.emoji}</span>

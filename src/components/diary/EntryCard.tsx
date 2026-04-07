@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,11 +25,11 @@ interface EntryCardProps {
 }
 
 export default function EntryCard({ entry }: EntryCardProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const mood = MOODS.find((m) => m.value === entry.mood);
 
-  // Strip HTML tags for preview
   const preview = entry.content
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
@@ -41,6 +42,7 @@ export default function EntryCard({ entry }: EntryCardProps) {
       await deleteEntry(entry.id);
       toast.success("Entry deleted");
       setOpen(false);
+      router.refresh();
     } catch {
       toast.error("Failed to delete entry");
       setDeleting(false);
@@ -48,15 +50,15 @@ export default function EntryCard({ entry }: EntryCardProps) {
   }
 
   return (
+    // Outer wrapper is position:relative so the delete button can be
+    // placed absolutely — completely outside the Link element.
     <div className="relative group">
       <Link href={`/dashboard/entries/${entry.id}`} className="block">
-        <article className="bg-card border border-border rounded-2xl p-5 hover:border-primary/40 hover:shadow-sm transition-all">
-          <div className="flex items-start justify-between gap-3">
+        <article className="bg-card border border-border rounded-2xl p-5 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm transition-all duration-200">
+          <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1.5">
-                {mood && (
-                  <span className="text-lg" title={mood.label}>{mood.emoji}</span>
-                )}
+                {mood && <span className="text-lg" title={mood.label}>{mood.emoji}</span>}
                 <span className="text-xs text-muted-foreground">
                   {format(new Date(entry.created_at), "MMMM d, yyyy")}
                 </span>
@@ -79,47 +81,40 @@ export default function EntryCard({ entry }: EntryCardProps) {
                 </div>
               )}
             </div>
-
-            {/* Delete button — stops link propagation via Dialog */}
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger
-                onClick={(e) => e.preventDefault()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
-                title="Delete entry"
-              >
-                <Trash2 className="h-4 w-4" />
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-sm rounded-2xl">
-                <DialogHeader>
-                  <DialogTitle className="font-heading">Delete entry?</DialogTitle>
-                  <DialogDescription>
-                    &ldquo;{entry.title || "Untitled entry"}&rdquo; will be permanently deleted. This can&apos;t be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="gap-2 sm:gap-0">
-                  <Button
-                    variant="outline"
-                    onClick={() => setOpen(false)}
-                    disabled={deleting}
-                    className="rounded-xl"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="rounded-xl gap-2"
-                  >
-                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    Delete
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            {/* Spacer so the delete button area doesn't overlap text */}
+            <div className="w-8 shrink-0" />
           </div>
         </article>
       </Link>
+
+      {/* Delete button sits OUTSIDE the Link so it never triggers navigation */}
+      <div className="absolute top-4 right-4">
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
+            title="Delete entry"
+          >
+            <Trash2 className="h-4 w-4" />
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="font-heading">Delete entry?</DialogTitle>
+              <DialogDescription>
+                &ldquo;{entry.title || "Untitled entry"}&rdquo; will be permanently deleted. This can&apos;t be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={deleting} className="rounded-xl">
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleting} className="rounded-xl gap-2">
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

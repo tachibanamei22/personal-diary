@@ -6,10 +6,13 @@ import type { DiaryEntry, EntryImage } from "@/types";
 
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }
 
-export default async function EntryPage({ params }: Props) {
+export default async function EntryPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const { new: isNew } = await searchParams;
+
   const [entry, images] = await Promise.all([
     getEntry(id),
     getEntryImages(id),
@@ -17,5 +20,11 @@ export default async function EntryPage({ params }: Props) {
 
   if (!entry) notFound();
 
-  return <EntryView entry={entry as DiaryEntry} images={images as EntryImage[]} />;
+  return (
+    <EntryView
+      entry={entry as DiaryEntry}
+      images={images as EntryImage[]}
+      startInEditMode={isNew === "true"}
+    />
+  );
 }
