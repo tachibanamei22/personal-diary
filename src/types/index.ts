@@ -8,6 +8,19 @@ export const MOODS: { value: Mood; label: string; emoji: string; color: string }
   { value: "awful",   label: "Awful",   emoji: "😞", color: "text-red-400" },
 ];
 
+export interface EntryImage {
+  id: string;
+  entry_id: string;
+  user_id: string;
+  storage_path: string;
+  url: string;
+  x: number;
+  y: number;
+  rotation: number;
+  z_index: number;
+  created_at: string;
+}
+
 export interface DiaryEntry {
   id: string;
   user_id: string;

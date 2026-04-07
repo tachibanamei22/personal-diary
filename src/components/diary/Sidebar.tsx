@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import { BookOpen, LayoutDashboard, PenLine, Settings, LogOut } from "lucide-react";
+import { BookOpen, LayoutDashboard, PenLine, Settings, LogOut, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -16,6 +17,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
 
   async function handleLogout() {
     const supabase = createClient();
@@ -57,8 +59,21 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 pb-5">
+      {/* Bottom controls */}
+      <div className="px-3 pb-5 space-y-1">
+        {/* Theme toggle */}
+        <button
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {theme === "dark"
+            ? <Sun className="h-4 w-4 shrink-0" />
+            : <Moon className="h-4 w-4 shrink-0" />}
+          {theme === "dark" ? "Light mode" : "Dark mode"}
+        </button>
+
+        {/* Logout */}
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors"

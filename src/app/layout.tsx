@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Lato } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const lato = Lato({
@@ -29,8 +30,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${lato.variable} ${playfair.variable} h-full`}>
       <body className="min-h-full bg-background text-foreground antialiased">
-        {children}
-        <Toaster richColors position="top-right" />
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

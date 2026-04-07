@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { getEntry } from "@/lib/actions/entries";
+import { getEntryImages } from "@/lib/actions/images";
 import EntryView from "./EntryView";
-import type { DiaryEntry } from "@/types";
+import type { DiaryEntry, EntryImage } from "@/types";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -9,7 +10,12 @@ interface Props {
 
 export default async function EntryPage({ params }: Props) {
   const { id } = await params;
-  const entry = await getEntry(id);
+  const [entry, images] = await Promise.all([
+    getEntry(id),
+    getEntryImages(id),
+  ]);
+
   if (!entry) notFound();
-  return <EntryView entry={entry as DiaryEntry} />;
+
+  return <EntryView entry={entry as DiaryEntry} images={images as EntryImage[]} />;
 }

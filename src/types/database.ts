@@ -31,6 +31,39 @@ export interface Database {
         };
         Relationships: [];
       };
+      entry_images: {
+        Row: {
+          id: string;
+          entry_id: string;
+          user_id: string;
+          storage_path: string;
+          url: string;
+          x: number;
+          y: number;
+          rotation: number;
+          z_index: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          entry_id: string;
+          user_id: string;
+          storage_path: string;
+          url: string;
+          x?: number;
+          y?: number;
+          rotation?: number;
+          z_index?: number;
+          created_at?: string;
+        };
+        Update: {
+          x?: number;
+          y?: number;
+          rotation?: number;
+          z_index?: number;
+        };
+        Relationships: [];
+      };
       entries: {
         Row: {
           id: string;
