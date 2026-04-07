@@ -4,13 +4,13 @@ A personal diary web app built with Next.js 15, Supabase, and Tiptap.
 
 ## Features
 
-- **Rich text editor** — bold, italic, underline, headings, lists, blockquotes, alignment
-- **Mood tracking** — tag each entry with an emoji mood (Amazing, Happy, Okay, Sad, Awful)
-- **Tags** — organize entries with custom tags
-- **Full-text search** — search across all entry titles and content
-- **Calendar widget** — visualize which days you wrote and which you missed
-- **Writing streak** — track consecutive days of journaling
-- **Authentication** — private entries secured with Supabase Auth (email/password)
+- **Rich text editor** - bold, italic, underline, headings, lists, blockquotes, alignment
+- **Mood tracking** - tag each entry with an emoji mood (Amazing, Happy, Okay, Sad, Awful)
+- **Tags** - organize entries with custom tags
+- **Full-text search** - search across all entry titles and content
+- **Calendar widget** - visualize which days you wrote and which you missed
+- **Writing streak** - track consecutive days of journaling
+- **Authentication** - private entries secured with Supabase Auth (email/password)
 
 ## Tech Stack
 
@@ -86,7 +86,7 @@ supabase/
 └── migrations/             # SQL schema
 ```
 
-## Roadmap
+## What's Next?
 
 - [ ] Photo / image attachments
 - [ ] Dark mode toggle
